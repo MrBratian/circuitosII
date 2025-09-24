@@ -1,6 +1,7 @@
 import math
 import cmath
-from conversiones import estrella_a_triangulo, triangulo_a_estrella
+import os
+from conversiones import estrella_a_triangulo
 from calculos import mostrar, mostrar_potencia, calcular_tensiones_corrientes_potencias
 
 def leer_impedancia(nombre, formato):
@@ -44,27 +45,8 @@ def main():
         mostrar("Z2", Z2)
         mostrar("Z3", Z3)
     elif op == 2:
-        print("\n¿El circuito es balanceado?")
-        print("1) Sí")
-        print("2) No")
-        balanceado = int(input("> "))
-        print("\nFormato de entrada:")
-        print("1) Rectangular (real, imag)")
-        print("2) Polar (magnitud, ángulo en grados)")
-        formato = int(input("> "))
-        if balanceado == 1:
-            Z1 = leer_impedancia("Z1", formato)
-            Z2 = Z1
-            Z3 = Z1
-        else:
-            Z1 = leer_impedancia("Z1", formato)
-            Z2 = leer_impedancia("Z2", formato)
-            Z3 = leer_impedancia("Z3", formato)
-        Za, Zb, Zc = triangulo_a_estrella(Z1, Z2, Z3)
-        print("\nResultados:")
-        mostrar("Za", Za)
-        mostrar("Zb", Zb)
-        mostrar("Zc", Zc)
+        # Ejecuta el archivo de conversión de triángulo a estrella
+        os.system('python conversion_triangulo_estrella.py')
     elif op == 3:
         print("\nTipo de conexión de la fuente:")
         print("1) Estrella (Y)")
@@ -119,12 +101,41 @@ def main():
                 Z3 = leer_impedancia("Z3", formato)
                 Zs = [Z1, Z2, Z3]
         print("\nResultados:")
-        calcular_tensiones_corrientes_potencias(
+        Vfasores_fuente, Vlineas_fuente, Ifases, Ilineas, potencias = calcular_tensiones_corrientes_potencias(
             Zs, Vlinea_mag, tipo_carga, balanceado, tipo_fuente, ang_v1
         )
+        while True:
+            print("\n¿Desea graficar algún resultado?")
+            print("1) Tensiones de fase y de línea")
+            print("2) Corrientes de fase y de línea")
+            print("3) Potencias por fase y total")
+            print("4) Salir")
+            opcion_graf = int(input("> "))
+            if opcion_graf == 1:
+                from graficar import plot_fasores
+                plot_fasores(Vfasores_fuente + Vlineas_fuente,
+                             nombres=[f"Vfase_{i+1}" for i in range(3)] + [f"Vlinea_{i+1}" for i in range(3)],
+                             titulo="Tensiones de Fase y Línea",
+                             xlabel="Voltios (Re)",
+                             ylabel="Voltios (Im)")
+            elif opcion_graf == 2:
+                from graficar import plot_fasores
+                plot_fasores(Ifases + Ilineas,
+                             nombres=[f"Ifase_{i+1}" for i in range(3)] + [f"Ilinea_{i+1}" for i in range(3)],
+                             titulo="Corrientes de Fase y Línea",
+                             xlabel="Amperios (Re)",
+                             ylabel="Amperios (Im)")
+            elif opcion_graf == 3:
+                from graficar import plot_power_vectors
+                plot_power_vectors(potencias, nombres=[f"Fase {i+1}" for i in range(3)] + ["Total"])
+            elif opcion_graf == 4:
+                print("Saliendo del programa.")
+                break
+            else:
+                print("Opción no válida.")
     elif op == 4:
-        from conversion_polar_rect import convertir_polar_rectangular
-        convertir_polar_rectangular()
+        # Ejecuta el archivo de conversión polar/rectangular
+        os.system('python conversion_polar_rect.py')
 
 if __name__ == "__main__":
     main()
