@@ -15,43 +15,41 @@ def mostrar_potencia(nombre, S):
     polar = f"{round(mag,2)} VA ∠ {round(ang,2)}°"
     print(f"Potencia {nombre}: {rect} = {polar}")
 
-def calcular_tensiones_corrientes_potencias(Zs, Vlinea, tipo):
+def calcular_tensiones_corrientes_potencias(Zs, Vlinea, tipo, balanceado=1):
+    print("\n--- Datos de la FUENTE ---")
     if tipo == 1:
         Vfase = Vlinea / math.sqrt(3)
-        Stot = 0
-        Qtot = 0
-        for i, Z in enumerate(Zs):
-            Ifase = Vfase / Z
-            S = Vfase * complex(Ifase).conjugate()
-            Q = S.imag
-            Stot += S
-            Qtot += Q
-            print(f"Fase {i+1} (Estrella):")
-            print(f"  Tensión de fase = {round(Vfase,2)} V")
-            print(f"  Corriente de fase = Corriente de línea = {round(abs(Ifase),2)} A ∠ {round(math.degrees(cmath.phase(Ifase)),2)}°")
-            mostrar_potencia(f"Fase {i+1}", S)
-            print(f"  Potencia reactiva (Q): {round(Q,2)} var = {round(Q/1000,3)} kVAR")
-        print("\nPotencia trifásica total:")
-        mostrar_potencia("Trifásica", Stot)
-        print(f"Potencia reactiva total (Q): {round(Qtot,2)} var = {round(Qtot/1000,3)} kVAR")
+        print(f"Tensión de línea: {round(Vlinea,2)} V")
+        print(f"Tensión de fase: {round(Vfase,2)} V")
     else:
         Vfase = Vlinea
-        Stot = 0
-        Qtot = 0
-        for i, Z in enumerate(Zs):
-            Ifase = Vfase / Z
+        print(f"Tensión de línea y fase: {round(Vlinea,2)} V")
+    print("\n--- Datos de las LÍNEAS ---")
+    for i, Z in enumerate(Zs):
+        Ifase = Vfase / Z
+        if tipo == 1:
+            Ilinea = Ifase
+        else:
             Ilinea = abs(Ifase) * math.sqrt(3)
-            angI = math.degrees(cmath.phase(Ifase))
-            S = Vfase * complex(Ifase).conjugate()
-            Q = S.imag
-            Stot += S
-            Qtot += Q
-            print(f"Fase {i+1} (Triángulo):")
-            print(f"  Tensión de fase = {round(Vfase,2)} V")
-            print(f"  Corriente de fase = {round(abs(Ifase),2)} A ∠ {round(angI,2)}°")
-            print(f"  Corriente de línea = {round(Ilinea,2)} A")
-            mostrar_potencia(f"Fase {i+1}", S)
-            print(f"  Potencia reactiva (Q): {round(Q,2)} var = {round(Q/1000,3)} kVAR")
-        print("\nPotencia trifásica total:")
-        mostrar_potencia("Trifásica", Stot)
-        print(f"Potencia reactiva total (Q): {round(Qtot,2)} var = {round(Qtot/1000,3)} kVAR")
+        print(f"Línea {i+1}:")
+        print(f"  Corriente de línea = {round(abs(Ilinea),2)} A ∠ {round(math.degrees(cmath.phase(Ifase)),2)}°")
+    print("\n--- Datos de las CARGAS ---")
+    Stot = 0
+    Qtot = 0
+    for i, Z in enumerate(Zs):
+        Ifase = Vfase / Z
+        S = Vfase * complex(Ifase).conjugate()
+        Q = S.imag
+        Stot += S
+        Qtot += Q
+        print(f"Carga {i+1}:")
+        print(f"  Corriente de fase = {round(abs(Ifase),2)} A ∠ {round(math.degrees(cmath.phase(Ifase)),2)}°")
+        mostrar_potencia(f"Carga {i+1}", S)
+        print(f"  Potencia reactiva (Q): {round(Q,2)} var = {round(Q/1000,3)} kVAR")
+    print("\nPotencia trifásica total:")
+    mostrar_potencia("Trifásica", Stot)
+    print(f"Potencia reactiva total (Q): {round(Qtot,2)} var = {round(Qtot/1000,3)} kVAR")
+    if balanceado == 1:
+        print("\nEl circuito es balanceado: todas las fases tienen los mismos valores.")
+    else:
+        print("\nEl circuito es desbalanceado: los valores pueden variar entre fases.")

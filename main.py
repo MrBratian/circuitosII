@@ -21,6 +21,11 @@ def main():
     print("3) Calcular tensiones, corrientes y potencias (incluye lectura de varímetro)")
     print("4) Ejercicio combinado (conversión + cálculos + reconversión)")
     op = int(input("> "))
+    if op in [3, 4]:
+        print("\n¿El circuito es balanceado?")
+        print("1) Sí")
+        print("2) No")
+        balanceado = int(input("> "))
     if op == 1:
         print("\nFormato de entrada:")
         print("1) Rectangular (real, imag)")
@@ -71,7 +76,7 @@ def main():
         print("\nIngrese la tensión de línea (valor eficaz, en V):")
         Vlinea = float(input("> "))
         print("\nResultados:")
-        calcular_tensiones_corrientes_potencias(Zs, Vlinea, tipo)
+        calcular_tensiones_corrientes_potencias(Zs, Vlinea, tipo, balanceado)
     elif op == 4:
         print("\nEjercicio combinado:")
         print("1) Δ → Y → cálculos → Δ")
