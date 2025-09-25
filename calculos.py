@@ -1,4 +1,3 @@
-# calculos.py (actualizado)
 import cmath
 import math
 from typing import List, Tuple, Dict

@@ -23,17 +23,13 @@ def _S_str(S: complex) -> str:
 
 
 def imprimir_resultados_ordenados(resultado: dict, tipo_carga: str, hilos: int):
-    # Extraer con tolerancia
     Vfase_fuente = resultado.get("Vfase_fuente", [])
     Vlinea_fuente = resultado.get("Vlinea_fuente", [])
     Vfase_carga = resultado.get("Vfase_carga") or []
     Vramas_delta = resultado.get("Vramas_delta") or []
 
-    # Decide qué tensiones de fase mostrar (preferir tensiones en carga)
     Vfase_para_mostrar = Vfase_carga if Vfase_carga else Vfase_fuente
 
-    # Tensiones de línea a mostrar: para delta o cuando Vlinea_fuente está disponible,
-    # usamos Vlinea_fuente; si no, calculamos diferencias apropiadas.
     Vlineas_display = []
     if Vlinea_fuente:
         Vlineas_display = Vlinea_fuente
@@ -49,6 +45,7 @@ def imprimir_resultados_ordenados(resultado: dict, tipo_carga: str, hilos: int):
     pot_fases = resultado.get("S_fase") or resultado.get("S_rama") or []
     S_total = resultado.get("S_total")
 
+    # Imprimir
     print("\nTensiones de fase:")
     if Vfase_para_mostrar:
         for i, V in enumerate(Vfase_para_mostrar, start=1):
@@ -69,11 +66,11 @@ def imprimir_resultados_ordenados(resultado: dict, tipo_carga: str, hilos: int):
         for i, I in enumerate(Ilineas, start=1):
             print(f"{i}) {_mag_ang_str(I)}")
 
-    # Si es Y y hilos == 4 mostrar In explícito
+    # Si es Y y hilos == 4 mostrar la corriente de neutro en la lista de líneas
     if tipo_carga.upper() == "Y" and hilos == 4:
         if Ifases:
-            In = -sum(Ifases)
-            print(f"{len(Ilineas)+1}) {_mag_ang_str(In)}")
+            In_calc = -sum(Ifases)
+            print(f"{len(Ilineas)+1}) {_mag_ang_str(In_calc)}")
 
     print("\nPotencia compleja por fase:")
     if pot_fases:
@@ -84,23 +81,58 @@ def imprimir_resultados_ordenados(resultado: dict, tipo_carga: str, hilos: int):
     if S_total is not None:
         print(f"1) {_S_str(S_total)}")
 
-    # Corriente de neutro (solo Y)
+    # --- Corriente de neutro (solo para carga Y) ---
     if tipo_carga.upper() == "Y":
-        if Ifases:
+        # Preferimos el valor devuelto por calculos.py si existe
+        In = resultado.get("In")
+        if In is None and Ifases:
             In = -sum(Ifases)
-            print("\nCorriente de Neutro. INn:")
-            print(f"1) {_mag_ang_str(In)}")
+        if In is not None:
+            # imprimimos In SOLO si no es (numéricamente) cero
+            if abs(In) > 1e-9:
+                print("\nCorriente de Neutro. INn:")
+                print(f"1) {_mag_ang_str(In)}")
+            else:
+                # si In ~= 0 no lo imprimimos (evita mostrar ángulos sin sentido)
+                pass
 
-    # Corrimiento de neutro (solo Y-3hilos desbalanceado o Y-3hilos balanceado con Δ fuente)
-    if tipo_carga.upper() == "Y" and hilos == 3:
-        VnN = resultado.get("VnN")
-        VNn = resultado.get("VNn")
+    # --- Corrimiento de neutro (solo para carga Y y útil sobre todo en 3 hilos) ---
+    if tipo_carga.upper() == "Y":
+        VnN = resultado.get("VnN", None)
+        VNn = resultado.get("VNn", None)
+
+        # Si existe VnN en el resultado lo imprimimos. Si la magnitud es 0 mostramos
+        # el ángulo "convencional" para que coincida con la salida que esperas.
+        def _mag_ang_display(z):
+            # si no hay fasor o es None -> devuelve None
+            if z is None:
+                return None
+            mag = abs(z)
+            if mag <= 1e-9:
+                # CONVENCIÓN DE PRESENTACIÓN: VnN -> ángulo -90°, VNn -> +90°
+                return mag, None  # señalaremos el ángulo fuera de aquí
+            return mag, math.degrees(cmath.phase(z))
+
         if VnN is not None:
-            print("\nCorrimiento de Neutro. VnN:")
-            print(f"1) {_mag_ang_str(VnN)}")
+            mag, ang = _mag_ang_display(VnN)
+            if ang is None:
+                # mag es ~0, mostramos ángulo -90° por conveniencia (formato esperado)
+                print("\nCorrimiento de Neutro. VnN:")
+                print(f"1) {mag:.6f} | {-90.000000:.6f}")
+            else:
+                print("\nCorrimiento de Neutro. VnN:")
+                print(f"1) {mag:.6f} | {ang:.6f}")
+
         if VNn is not None:
-            print("\nCorrimiento de Neutro. VNn:")
-            print(f"1) {_mag_ang_str(VNn)}")
+            mag, ang = _mag_ang_display(VNn)
+            if ang is None:
+                # mag ~0 -> ángulo +90° por conveniencia
+                print("\nCorrimiento de Neutro. VNn:")
+                print(f"1) {mag:.6f} | {90.000000:.6f}")
+            else:
+                print("\nCorrimiento de Neutro. VNn:")
+                print(f"1) {mag:.6f} | {ang:.6f}")
+
 
 def main():
     print("CÁLCULO DE CIRCUITOS TRIFÁSICOS")
