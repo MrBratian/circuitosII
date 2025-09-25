@@ -71,6 +71,28 @@ def plot_power_vectors(potencias, nombres=None):
     plt.grid(True)
     plt.show()
 
+def plot_power_fases(Vms, Ims, phases_v, phases_i, freq, duration=0.05, samples=1000):
+    t = np.linspace(0, duration, samples)
+    omega = 2 * np.pi * freq
+    potencias = []
+    for Vm, Im, phase_v, phase_i in zip(Vms, Ims, phases_v, phases_i):
+        v = Vm * np.sin(omega * t + np.deg2rad(phase_v))
+        i = Im * np.sin(omega * t + np.deg2rad(phase_i))
+        p = v * i
+        potencias.append(p)
+    p_total = np.sum(potencias, axis=0)
+    plt.figure(figsize=(10,6))
+    for idx, p in enumerate(potencias):
+        plt.plot(t, p, label=f'Potencia Inst. Fase {idx+1}')
+    plt.plot(t, p_total, label='Potencia Inst. Trifásica', linewidth=2, color='k')
+    plt.xlabel('Tiempo (s)')
+    plt.ylabel('Potencia Instantánea (W)')
+    plt.title('Potencia Instantánea por Fase y Trifásica')
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
 if __name__ == "__main__":
     # Ejemplo: Vm=311V, Im=10A, freq=50Hz, desfase=30°
     plot_power(Vm=311, Im=10, freq=50, phase_v=0, phase_i=30)
